@@ -1,0 +1,28 @@
+name: Upload IPA to App Store Connect
+on:
+  push:
+
+jobs:
+  upload:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Debug secrets
+        run: |
+          echo "KEY_ID=${{ secrets.ASC_KEY_ID }}"
+          echo "ISSUER=${{ secrets.ASC_ISSUER_ID }}"
+          echo "KEY_LENGTH=$(echo '${{ secrets.ASC_PRIVATE_KEY }}' | wc -c)"
+          find . -name "*.ipa" -ls
+          
+      - name: Upload to App Store Connect
+        run: |
+          mkdir -p ~/.appstoreconnect/private_keys
+          echo "${{ secrets.ASC_PRIVATE_KEY }}" > ~/.appstoreconnect/private_keys/AuthKey_${{ secrets.ASC_KEY_ID }}.p8
+          IPA=$(find . -name "*.ipa" | head -1)
+          echo "Uploading: $IPA"
+          xcrun altool --upload-app \
+            --type ios \
+            --file "$IPA" \
+            --apiKey "${{ secrets.ASC_KEY_ID }}" \
+            --apiIssuer "${{ secrets.ASC_ISSUER_ID }}"
